@@ -1,29 +1,38 @@
+export class GithubUser {
+  static search(username) {
+    const endpoint = `https://api.github.com/users/${username}` 
+
+    return fetch(endpoint)
+      .then(data => data.json())
+      .then(({ login, name, public_repos, followers }) => ({
+          login,
+          name,
+          public_repos,
+          followers
+      }))
+  }
+}
+
 // classe que vai conter a lógica dos dados
 // como os dados serão estruturados
 export class Favorites {
   constructor(root) {
     this.root = document.querySelector(root)
-
-    this.tbody = this.root.querySelector('table tbody')
-
     this.load()
+
+    GithubUser.search('maykbrito').then(user => console.log(user))
   }
 
   load() {
-    this.entries = [
-      {
-        login: 'ccassolf',
-        name: 'Carlos Cassol',
-        public_repos: '76',
-        followers: '120000'
-      },
-      {
-        login: 'diego3g',
-        name: 'Diego Fernandes',
-        public_repos: '76',
-        followers: '120000'
-      }
-    ]
+    this.entries = JSON.parse(localStorage.getItem('@github-favorites')) || []
+  }
+
+  delete(user) {
+    const filteredEntries = this.entries
+      .filter(entry => entry.login !== user.login)
+
+    this.entries = filteredEntries
+    this.update()
   }
 }
 
@@ -31,6 +40,8 @@ export class Favorites {
 export class FavoritesView extends Favorites {
   constructor(root) {
     super(root)
+
+    this.tbody = this.root.querySelector('table tbody')
 
     this.update()
   }
@@ -49,6 +60,14 @@ export class FavoritesView extends Favorites {
       row.querySelector('.user span').textContent = user.login
       row.querySelector('.repositories').textContent = user.public_repos
       row.querySelector('.followers').textContent = user.followers
+
+      row.querySelector('.remove').onclick = () => {
+        const isOk = confirm('Tem certeza que deseja deletar essa linha?')
+
+        if(isOk) {
+          this.delete(user)
+        }
+      }
 
       this.tbody.append(row) 
     })
